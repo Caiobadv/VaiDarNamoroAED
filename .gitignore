@@ -50,3 +50,23 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+# Arquivos do macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Pastas de metadados do MacOS
+__MACOSX
+._*
+
+# Thumbnails
+._.Trashes
+
+# Arquivos que podem aparecer na raiz ou em pastas específicas
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
