@@ -47,7 +47,6 @@ int main() {
     node *raiz;
 
     if (escolha == 'C' || escolha == 'c') {
-        // Construindo árvore para Caio
         raiz = createnode("Pergunta 1:(S para sim, N para não)");
         raiz->sim = createnode("Pergunta 2: (S para sim, N para não)");
         raiz->nao = createnode("Pergunta 2: (S para sim, N para não)");
@@ -66,7 +65,6 @@ int main() {
         strcpy(raiz->sim->sim->sim->nao->resultado, "Infelizmente, %s, voce não conquistou Caio.");
 
     } else {
-        // Construindo árvore para Ana
         raiz = createnode("Pergunta 1: (S para sim, N para não)");
         raiz->sim = createnode("Pergunta 2: (S para sim, N para não)");
         raiz->nao = createnode("Pergunta 2: (S para sim, N para não)");
