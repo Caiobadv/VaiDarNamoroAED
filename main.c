@@ -164,10 +164,10 @@ int main() {
     
     if (escolha == 'C' || escolha == 'c') {
         carregaRankingDeArquivo(rankingCaio, &numJogadoresCaio, "rankingCaio.txt");
-        lerPerguntasRespostas(perguntas, respostas, "perguntasJogo.txt", "respostaCaio.txt", &numPerguntas);
+        lerPerguntasRespostas(perguntas, respostas, "perguntasCaio.txt", "respostaCaio.txt", &numPerguntas);
     } else {
         carregaRankingDeArquivo(rankingAna, &numJogadoresAna, "rankingAna.txt");
-        lerPerguntasRespostas(perguntas, respostas, "perguntasJogo.txt", "respostaAna.txt", &numPerguntas);
+        lerPerguntasRespostas(perguntas, respostas, "perguntasAna.txt", "respostaAna.txt", &numPerguntas);
     }
 
     jogo(perguntas, respostas, numPerguntas, &pontuacao);
