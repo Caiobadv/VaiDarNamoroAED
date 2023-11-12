@@ -2,183 +2,199 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct node {
-    char pergunta[1000];
-    struct node *sim;
-    struct node *nao;
-    char resultado[1000];
-}node;
 
-typedef struct Player {
+typedef struct respostaNode {
+    char resposta[1000];
+    struct respostaNode *proximo;
+} RespostaNode;
+
+typedef struct {
     char nome[50];
     int pontuacao;
-} Player;
+} Jogador;
 
-node* createnode(char *pergunta) {
-    node *newnode = (node*) malloc(sizeof(node));
-    strcpy(newnode->pergunta, pergunta);
-    newnode->sim = NULL;
-    newnode->nao = NULL;
-    strcpy(newnode->resultado, "");
-    return newnode;
-}
+Jogador ranking[100];
+int numJogadores = 0;
 
-void atualizaRanking(Player *ranking, char *nome, int pontuacao, int *tamanho) {
-    for (int i = 0; i < *tamanho; i++) {
+void atualizaRanking(Jogador ranking[], char *nome, int pontuacao, int *numJogadores) {
+    int i;
+    for (i = 0; i < *numJogadores; ++i) {
         if (strcmp(ranking[i].nome, nome) == 0) {
-            ranking[i].pontuacao += pontuacao;
+            ranking[i].pontuacao = pontuacao;
             return;
         }
     }
-    strcpy(ranking[*tamanho].nome, nome);
-    ranking[*tamanho].pontuacao = pontuacao;
-    (*tamanho)++;
+    strcpy(ranking[i].nome, nome);
+    ranking[i].pontuacao = pontuacao;
+    (*numJogadores)++;
 }
 
-void insertionSort(Player *ranking, int tamanho) {
+void insertionSort(Jogador ranking[], int numJogadores) {
     int i, j;
-    Player key;
-    for (i = 1; i < tamanho; i++) {
-        key = ranking[i];
+    Jogador chave;
+    for (i = 1; i < numJogadores; i++) {
+        chave = ranking[i];
         j = i - 1;
-        while (j >= 0 && ranking[j].pontuacao < key.pontuacao) {
+
+        while (j >= 0 && ranking[j].pontuacao < chave.pontuacao) {
             ranking[j + 1] = ranking[j];
             j = j - 1;
         }
-        ranking[j + 1] = key;
+        ranking[j + 1] = chave;
     }
 }
 
-void exibeRanking(Player ranking[], int tamanho) {
-    printf("\nRanking:\n");
-    for (int i = 0; i < tamanho; i++) {
-        printf("%d. %s - %d pontos\n", i + 1, ranking[i].nome, ranking[i].pontuacao);
-    }
-}
-
-void salvaRankingEmArquivo(Player ranking[], int tamanho, const char *nomeArquivo) {
-    FILE *arquivo = fopen(nomeArquivo, "w+");
-    if (arquivo == NULL) {
-        perror("Erro ao abrir arquivo");
+void salvaRankingEmArquivo(Jogador ranking[], int numJogadores, const char *nomeArquivo) {
+    FILE *file = fopen(nomeArquivo, "w+");
+    if (file == NULL) {
+        perror("Erro ao abrir arquivo de ranking");
         return;
     }
 
-    for (int i = 0; i < tamanho; i++) {
-        fprintf(arquivo, "%s %d\n", ranking[i].nome, ranking[i].pontuacao);
+    for (int i = 0; i < numJogadores; i++) {
+        fprintf(file, "%s %d\n", ranking[i].nome, ranking[i].pontuacao);
     }
 
-    fclose(arquivo);
+    fclose(file);
 }
 
-void carregaRankingDeArquivo(Player ranking[], int *tamanho, const char *nomeArquivo) {
-    FILE *arquivo = fopen(nomeArquivo, "r");
-    if (arquivo == NULL) {
-        perror("Erro ao abrir arquivo");
+void carregaRankingDeArquivo(Jogador ranking[], int *numJogadores, const char *nomeArquivo) {
+    FILE *file = fopen(nomeArquivo, "r");
+    if (file == NULL) {
+        perror("Erro ao abrir arquivo de ranking");
+        *numJogadores = 0;
         return;
     }
 
+    *numJogadores = 0;
+    while (fscanf(file, "%49s %d", ranking[*numJogadores].nome, &ranking[*numJogadores].pontuacao) == 2) {
+        (*numJogadores)++;
+    }
+
+    fclose(file);
+}
+void lerPerguntasRespostas(char *perguntas[], char *respostas[], const char *perguntasJogo, const char *respostaJogo, int *tamanho) {
+    FILE *fpPerguntas = fopen(perguntasJogo, "r");
+    FILE *fpRespostas = fopen(respostaJogo, "r");
+    char linha[1000];
     *tamanho = 0;
-    while (fscanf(arquivo, "%49s %d", ranking[*tamanho].nome, &ranking[*tamanho].pontuacao) == 2) {
+
+    if (fpPerguntas == NULL || fpRespostas == NULL) {
+        printf("Erro ao abrir arquivos.\n");
+        return;
+    }
+
+    while (fgets(linha, sizeof(linha), fpPerguntas)) {
+        perguntas[*tamanho] = strdup(linha);
+        fgets(linha, sizeof(linha), fpRespostas);
+        linha[strcspn(linha, "\n")] = 0;
+        respostas[*tamanho] = strdup(linha);
         (*tamanho)++;
     }
 
-    fclose(arquivo);
+    fclose(fpPerguntas);
+    fclose(fpRespostas);
 }
 
-void jogo(node *atual, char *nome, int *pontuacao) {
-    if (atual->sim == NULL && atual->nao == NULL) {
-        printf(atual->resultado, nome);
-        return;
+RespostaNode* addRedposta(RespostaNode *head, char *resposta) {
+    RespostaNode *novoNode = (RespostaNode*)malloc(sizeof(RespostaNode));
+    strcpy(novoNode->resposta, resposta);
+    novoNode->proximo = NULL;
+
+    if (head == NULL) {
+        return novoNode;
     }
 
-    printf("%s\n", atual->pergunta);
-    char resposta;
-    scanf(" %c", &resposta);
+    RespostaNode *atual = head;
+    while (atual->proximo != NULL) {
+        atual = atual->proximo;
+    }
+    atual->proximo = novoNode;
 
-    if (resposta == 's' || resposta == 'S') {
-        (*pontuacao)++;
-        jogo(atual->sim, nome, pontuacao);
-    } else {
-        jogo(atual->nao, nome, pontuacao);
+    return head;
+}
+
+void liberaLista(RespostaNode *head) {
+    RespostaNode *atual = head;
+    while (atual != NULL) {
+        RespostaNode *temp = atual;
+        atual = atual->proximo;
+        free(temp);
     }
 }
 
-void liberaArvore(node *raiz) {
-    if (raiz == NULL) return;
-    
-    liberaArvore(raiz->sim);
-    liberaArvore(raiz->nao);
-    
-    free(raiz);
+void jogo(char *perguntas[], char *respostas[], int numPerguntas, int *pontuacao) {
+    char respostaUsuario[1000];
+
+    for (int i = 0; i < numPerguntas; i++) {
+        printf("Pergunta %d: %s\n", i + 1, perguntas[i]);
+        printf("Resposta: ");
+        fgets(respostaUsuario, 1000, stdin); // Modificação aqui
+        respostaUsuario[strcspn(respostaUsuario, "\n")] = 0;
+
+        respostas[i][strcspn(respostas[i], "\n")] = 0;
+
+        if (strcasecmp(respostaUsuario, respostas[i]) == 0) {
+            (*pontuacao)++;
+        }
+    }
+
+    printf("Você acertou %d de %d perguntas.\n", *pontuacao, numPerguntas);
 }
+
 
 int main() {
     char nome[50];
-    printf("Digite seu nome: ");
-    scanf("%s", nome);
-
-    printf("Quem você quer conquistar? (Caio = C, Ana = A): ");
     char escolha;
-    scanf(" %c", &escolha);
-
-    node *raiz;
     int pontuacao = 0;
+    int numPerguntas = 0;
+    char *perguntas[100];
+    char *respostas[100];
+    Jogador rankingAna[100];
+    Jogador rankingCaio[100];
+    int numJogadoresAna = 0;
+    int numJogadoresCaio = 0;
 
+    printf("Digite seu nome: ");
+    scanf("%49s", nome);
+    getchar();
+    printf("Quem você quer conquistar? (Caio = C, Ana = A): ");
+    scanf(" %c", &escolha);
+    getchar();
+    
     if (escolha == 'C' || escolha == 'c') {
-        raiz = createnode("Pergunta 1:(S para sim, N para não)");
-        raiz->sim = createnode("Pergunta 2: (S para sim, N para não)");
-        raiz->nao = createnode("Pergunta 2: (S para sim, N para não)");
-        
-        raiz->sim->sim = createnode("Pergunta 3: (S para sim, N para não)");
-        raiz->sim->nao = createnode("");
-        strcpy(raiz->sim->nao->resultado, "Infelizmente, %s, voce não conquistou o Caio.");
-        
-        raiz->sim->sim->sim = createnode("Pergunta 4: (S para sim, N para não)");
-        raiz->sim->sim->nao = createnode("");
-        strcpy(raiz->sim->sim->nao->resultado, "Infelizmente, %s, voce não conquistou Caio.");
-        
-        raiz->sim->sim->sim->sim = createnode("");
-        strcpy(raiz->sim->sim->sim->sim->resultado, "Parabéns, %s! voce conquistou Caio e ganhou direito a um date com ele!!!");
-        raiz->sim->sim->sim->nao = createnode("");
-        strcpy(raiz->sim->sim->sim->nao->resultado, "Infelizmente, %s, voce não conquistou Caio.");
-
+        carregaRankingDeArquivo(rankingCaio, &numJogadoresCaio, "rankingCaio.txt");
+        lerPerguntasRespostas(perguntas, respostas, "perguntasJogo.txt", "respostaCaio.txt", &numPerguntas);
     } else {
-        raiz = createnode("Pergunta 1: (S para sim, N para não)");
-        raiz->sim = createnode("Pergunta 2: (S para sim, N para não)");
-        raiz->nao = createnode("Pergunta 2: (S para sim, N para não)");
-        
-        raiz->sim->sim = createnode("Pergunta 3: (S para sim, N para não)");
-        raiz->sim->nao = createnode("");
-        strcpy(raiz->sim->nao->resultado, "Infelizmente, %s, voce não conquistou Ana.");
-        
-        raiz->sim->sim->sim = createnode("Pergunta 4: (S para sim, N para não)");
-        raiz->sim->sim->nao = createnode("");
-        strcpy(raiz->sim->sim->nao->resultado, "Infelizmente, %s, voce não conquistou Ana.");
-
-        raiz->sim->sim->sim = createnode("");
-        strcpy(raiz->sim->sim->sim->resultado, "Parabéns, %s! voce conquistou Ana e ganhou direito a um date com ela!!!");
-        raiz->sim->sim->nao = createnode("");
-        strcpy(raiz->sim->sim->nao->resultado, "Infelizmente, %s, voce não conquistou Ana.");
+        carregaRankingDeArquivo(rankingAna, &numJogadoresAna, "rankingAna.txt");
+        lerPerguntasRespostas(perguntas, respostas, "perguntasJogo.txt", "respostaAna.txt", &numPerguntas);
     }
 
-    jogo(raiz, nome, &pontuacao);
-
-    Player rankingAna[100];
-    Player rankingCaio[100];
-    int tamanhoAna = 0, tamanhoCaio = 0;
-    carregaRankingDeArquivo(rankingAna, &tamanhoAna, "ranking_ana.txt");
-    carregaRankingDeArquivo(rankingCaio, &tamanhoCaio, "ranking_caio.txt");
+    jogo(perguntas, respostas, numPerguntas, &pontuacao);
 
     if (escolha == 'C' || escolha == 'c') {
-        atualizaRanking(rankingCaio, nome, pontuacao, &tamanhoCaio);
-        insertionSort(rankingCaio, tamanhoCaio);
-        salvaRankingEmArquivo(rankingCaio, tamanhoCaio, "ranking_caio.txt");
-        exibeRanking(rankingCaio, tamanhoCaio);
+        atualizaRanking(rankingCaio, nome, pontuacao, &numJogadoresCaio);
+        insertionSort(rankingCaio, numJogadoresCaio);
+        salvaRankingEmArquivo(rankingCaio, numJogadoresCaio, "rankingCaio.txt");
     } else {
-        atualizaRanking(rankingAna, nome, pontuacao, &tamanhoAna);
-        insertionSort(rankingAna, tamanhoAna);
-        salvaRankingEmArquivo(rankingAna, tamanhoAna, "ranking_ana.txt");
-        exibeRanking(rankingAna, tamanhoAna);
+        atualizaRanking(rankingAna, nome, pontuacao, &numJogadoresAna);
+        insertionSort(rankingAna, numJogadoresAna);
+        salvaRankingEmArquivo(rankingAna, numJogadoresAna, "rankingAna.txt");
     }
-    liberaArvore(raiz);
+
+    if (escolha == 'C' || escolha == 'c') {
+    for (int i = 0; i < numJogadoresCaio; i++) {
+        printf("%d. %s - %d pontos\n", i + 1, rankingCaio[i].nome, rankingCaio[i].pontuacao);
+    }
+    } else {
+        for (int i = 0; i < numJogadoresAna; i++) {
+            printf("%d. %s - %d pontos\n", i + 1, rankingAna[i].nome, rankingAna[i].pontuacao);
+        }
+    }
+    for (int i = 0; i < numPerguntas; i++) {
+        free(perguntas[i]);
+        free(respostas[i]);
+    }
+
+    return 0;
 }
