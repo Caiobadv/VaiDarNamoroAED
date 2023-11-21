@@ -8,6 +8,8 @@ typedef struct respostaNode {
     struct respostaNode *proximo;
 } RespostaNode;
 
+RespostaNode *respostasGlobais = NULL;
+
 typedef struct {
     char nome[50];
     int pontuacao;
@@ -54,7 +56,7 @@ void salvaRankingEmArquivo(Jogador ranking[], int numJogadores, const char *nome
     for (int i = 0; i < numJogadores; i++) {
         fprintf(file, "%s %d\n", ranking[i].nome, ranking[i].pontuacao);
     }
-
+    
     fclose(file);
 }
 
@@ -73,6 +75,7 @@ void carregaRankingDeArquivo(Jogador ranking[], int *numJogadores, const char *n
 
     fclose(file);
 }
+
 void lerPerguntasRespostas(char *perguntas[], char *respostas[], const char *perguntasJogo, const char *respostaJogo, int *tamanho) {
     FILE *fpPerguntas = fopen(perguntasJogo, "r");
     FILE *fpRespostas = fopen(respostaJogo, "r");
@@ -123,24 +126,20 @@ void liberaLista(RespostaNode *head) {
     }
 }
 
-void jogo(char *perguntas[], char *respostas[], int numPerguntas, int *pontuacao) {
-    char respostaUsuario[1000];
+void jogo(char *perguntas[], RespostaNode *respostaHead, char *respostas[], int numPerguntas, int *pontuacao) {
+    RespostaNode *currentResponse = respostaHead;
 
     for (int i = 0; i < numPerguntas; i++) {
-        printf("Pergunta %d: %s\n", i + 1, perguntas[i]);
-        printf("Resposta: ");
-        fgets(respostaUsuario, 1000, stdin); // Modificação aqui
-        respostaUsuario[strcspn(respostaUsuario, "\n")] = 0;
-
-        respostas[i][strcspn(respostas[i], "\n")] = 0;
-
-        if (strcasecmp(respostaUsuario, respostas[i]) == 0) {
+        if (currentResponse && strcasecmp(currentResponse->resposta, respostas[i]) == 0) {
             (*pontuacao)++;
         }
-    }
 
-    printf("Você acertou %d de %d perguntas.\n", *pontuacao, numPerguntas);
+        if (currentResponse) currentResponse = currentResponse->proximo;
+    }
 }
+
+
+
 
 
 int main() {
@@ -154,6 +153,7 @@ int main() {
     Jogador rankingCaio[100];
     int numJogadoresAna = 0;
     int numJogadoresCaio = 0;
+    char respostaUsuario[1000];
 
     printf("Digite seu nome: ");
     scanf("%49s", nome);
@@ -170,7 +170,16 @@ int main() {
         lerPerguntasRespostas(perguntas, respostas, "perguntasAna.txt", "respostaAna.txt", &numPerguntas);
     }
 
-    jogo(perguntas, respostas, numPerguntas, &pontuacao);
+
+    for (int i = 0; i < numPerguntas; i++) {
+        printf("Pergunta %d: %s\n", i + 1, perguntas[i]);
+        printf("Resposta: ");
+        fgets(respostaUsuario, 1000, stdin);
+        respostaUsuario[strcspn(respostaUsuario, "\n")] = 0;
+
+        respostasGlobais = addRedposta(respostasGlobais, respostaUsuario);
+    }    
+    jogo(perguntas, respostasGlobais, respostas, numPerguntas, &pontuacao);
 
     if (escolha == 'C' || escolha == 'c') {
         atualizaRanking(rankingCaio, nome, pontuacao, &numJogadoresCaio);
@@ -183,10 +192,12 @@ int main() {
     }
 
     if (escolha == 'C' || escolha == 'c') {
+        printf("\nRanking Caio:\n");
     for (int i = 0; i < numJogadoresCaio; i++) {
         printf("%d. %s - %d pontos\n", i + 1, rankingCaio[i].nome, rankingCaio[i].pontuacao);
     }
     } else {
+        printf("\nRanking Ana:\n");
         for (int i = 0; i < numJogadoresAna; i++) {
             printf("%d. %s - %d pontos\n", i + 1, rankingAna[i].nome, rankingAna[i].pontuacao);
         }
