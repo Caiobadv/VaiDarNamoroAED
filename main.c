@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 typedef struct respostaNode {
     char resposta[1000];
     struct respostaNode *proximo;
@@ -138,10 +137,6 @@ void jogo(char *perguntas[], RespostaNode *respostaHead, char *respostas[], int 
     }
 }
 
-
-
-
-
 int main() {
     char nome[50];
     char escolha;
@@ -169,7 +164,6 @@ int main() {
         carregaRankingDeArquivo(rankingAna, &numJogadoresAna, "rankingAna.txt");
         lerPerguntasRespostas(perguntas, respostas, "perguntasAna.txt", "respostaAna.txt", &numPerguntas);
     }
-
 
     for (int i = 0; i < numPerguntas; i++) {
         printf("Pergunta %d: %s\n", i + 1, perguntas[i]);
